@@ -130,21 +130,13 @@ Real malaria datasets often require data sharing agreements and cleaning time. S
 
 ## What is Shiny?
 
-Shiny is an R package developed by Posit (formerly RStudio) 
-that lets you build interactive web applications directly 
-from R — no HTML, CSS, or JavaScript knowledge required.
+Shiny is an R package developed by Posit (formerly RStudio) that lets you build interactive web applications directly from R — no HTML, CSS, or JavaScript knowledge required.
 
 ### Why Shiny for malaria data?
 
-Malaria programmes generate large volumes of subnational 
-data — district-level incidence, rainfall, intervention 
-coverage, health facility access. Static plots and reports 
-are useful but limited: they show one view, fixed at the 
-time of rendering.
+Malaria programmes generate large volumes of subnational data — district-level incidence, rainfall, intervention coverage, health facility access. Static plots and reports are useful but limited: they show one view, fixed at the time of rendering.
 
-Shiny changes that. Instead of sending a programme manager 
-a PDF with 50 district plots, you give them a dashboard 
-where they can:
+Shiny changes that. Instead of sending a programme manager a PDF with 50 district plots, you give them a dashboard where they can:
 
 - Select their district and year
 - Explore trends interactively
@@ -155,25 +147,16 @@ This is the kind of tool we are building today.
 
 ### What does a Shiny app look like?
 
-At its simplest, a Shiny app is a single file called 
-`app.R` that lives in its own folder. It has three parts:
+At its simplest, a Shiny app is a single file called `app.R` that lives in its own folder. It has three parts:
 
 ::: callout-note
 ## The three parts of every Shiny app
 
-**1. UI (User Interface)**
-Defines what the user *sees* — the layout, 
-input controls (dropdowns, sliders), and 
-placeholders for outputs (maps, plots, tables).
+**1. UI (User Interface)** Defines what the user *sees* — the layout, input controls (dropdowns, sliders), and placeholders for outputs (maps, plots, tables).
 
-**2. Server**
-Defines what the app *does* — filters data, 
-builds plots, computes summaries, and sends 
-results back to the UI.
+**2. Server** Defines what the app *does* — filters data, builds plots, computes summaries, and sends results back to the UI.
 
-**3. shinyApp()**
-The function that ties UI and server together 
-and launches the app.
+**3. shinyApp()** The function that ties UI and server together and launches the app.
 :::
 
 Here is the simplest possible Shiny app:
@@ -219,25 +202,20 @@ shinyApp(ui, server)
 
 ::: callout-tip
 ## Try it now
-Copy the code above into a new `app.R` file, 
-save it, and click **Run App** in RStudio. 
-Move the slider watch the histogram update 
-instantly. That is reactivity in action.
+
+Copy the code above into a new `app.R` file, save it, and click **Run App** in RStudio. Move the slider watch the histogram update instantly. That is reactivity in action.
 :::
 
 ### The UI / server conversation
 
 The UI and server communicate through **shared IDs**:
 
-- An input in the UI with `inputId = "bins"` is 
-  accessed in the server as `input$bins`
-- An output in the server named `output$histogram` 
-  is displayed in the UI with `plotOutput("histogram")`
+- An input in the UI with `inputId = "bins"` is accessed in the server as `input$bins`
+- An output in the server named `output$histogram` is displayed in the UI with `plotOutput("histogram")`
 
-This ID-matching is the single most important concept 
-in Shiny. If the IDs don't match, nothing works.
+This ID-matching is the single most important concept in Shiny. If the IDs don't match, nothing works.
 
-```
+```         
 UI side                    Server side
 ─────────────────────────────────────────
 sliderInput("bins", ...)   input$bins
@@ -246,50 +224,36 @@ plotOutput("histogram")    output$histogram <- renderPlot({...})
 
 ::: callout-warning
 ## Common mistake
-The most frequent beginner error is mismatched IDs — 
-for example writing `plotOutput("Histogram")` in the UI 
-but `output$histogram` in the server. R is case-sensitive. 
-`Histogram` and `histogram` are different IDs.
+
+The most frequent beginner error is mismatched IDs — for example writing `plotOutput("Histogram")` in the UI but `output$histogram` in the server. R is case-sensitive. `Histogram` and `histogram` are different IDs.
 :::
 
 ### Modern Shiny with bslib
 
-The app above uses `fluidPage()` — the classic Shiny 
-layout. In this session we use `bslib` instead, which 
-gives us a more modern, responsive, and visually polished 
-layout with very little extra code.
+The app above uses `fluidPage()` — the classic Shiny layout. In this session we use `bslib` instead, which gives us a more modern, responsive, and visually polished layout with very little extra code.
 
 ::: callout-note
 ## What is bslib?
-`bslib` is Posit's modern UI toolkit for Shiny. 
-It is built on Bootstrap 5 and replaces the older 
-`shinydashboard` package. Key advantages:
+
+`bslib` is Posit's modern UI toolkit for Shiny. It is built on Bootstrap 5 and replaces the older `shinydashboard` package. Key advantages:
 
 - Cleaner, more professional look out of the box
 - Easy theming with `bs_theme()`
-- Modern components: `card()`, `value_box()`, 
-  `layout_columns()`
+- Modern components: `card()`, `value_box()`, `layout_columns()`
 - Actively maintained and updated
 :::
 
-Everything you just learned about UI, server, inputs, 
-outputs and IDs applies equally to `bslib` apps 
-only the layout functions change.
+Everything you just learned about UI, server, inputs, outputs and IDs applies equally to `bslib` apps only the layout functions change.
 
 ## Anatomy of a Shiny App
 
-Now that you have seen a Shiny app run, let's understand 
-each part in detail before we start building our 
-malaria dashboard.
+Now that you have seen a Shiny app run, let's understand each part in detail before we start building our malaria dashboard.
 
 ### The UI in depth
 
-The UI is built by nesting R functions inside each other. 
-Each function adds an element to the page a title, 
-a sidebar, a dropdown, a plot placeholder.
+The UI is built by nesting R functions inside each other. Each function adds an element to the page a title, a sidebar, a dropdown, a plot placeholder.
 
-In `bslib`, the top-level layout function is 
-`page_sidebar()`:
+In `bslib`, the top-level layout function is `page_sidebar()`:
 
 ```{r}
 #| eval: false
@@ -304,18 +268,13 @@ ui <- page_sidebar(
 )
 ```
 
-Inside the sidebar we place **inputs** — controls 
-the user interacts with.
+Inside the sidebar we place **inputs** — controls the user interacts with.
 
-Inside the main panel we place **outputs** — 
-placeholders for maps, plots, tables, and text 
-that the server will fill.
+Inside the main panel we place **outputs** — placeholders for maps, plots, tables, and text that the server will fill.
 
 ### Input controls
 
-Input functions collect a value from the user. 
-When the user changes an input, Shiny automatically 
-updates any output that depends on it.
+Input functions collect a value from the user. When the user changes an input, Shiny automatically updates any output that depends on it.
 
 All input functions share the same structure:
 
@@ -332,8 +291,8 @@ selectInput(
 
 ::: callout-note
 ## The golden rule of inputs
-Every input has an `inputId`. This is how the server 
-knows which input changed. Choose IDs that are:
+
+Every input has an `inputId`. This is how the server knows which input changed. Choose IDs that are:
 
 - Short and descriptive: `"year"`, `"district"`, `"indicator"`
 - Lowercase with no spaces: use `_` if needed e.g. `"admin_level"`
@@ -342,17 +301,16 @@ knows which input changed. Choose IDs that are:
 
 Here are the input types we use in this session:
 
-| Function | What it shows | When to use |
-|---|---|---|
-| `selectInput()` | Dropdown menu | Long lists |
-| `radioButtons()` | Radio buttons | 2–4 choices |
-| `sliderInput()` | Slider | Numeric ranges |
-| `checkboxInput()` | Single checkbox | On/off toggle |
+| Function          | What it shows   | When to use    |
+|-------------------|-----------------|----------------|
+| `selectInput()`   | Dropdown menu   | Long lists     |
+| `radioButtons()`  | Radio buttons   | 2–4 choices    |
+| `sliderInput()`   | Slider          | Numeric ranges |
+| `checkboxInput()` | Single checkbox | On/off toggle  |
 
 ### Output placeholders
 
-Output functions in the UI are placeholders 
-empty containers that the server fills with content.
+Output functions in the UI are placeholders empty containers that the server fills with content.
 
 ```{r}
 #| eval: false
@@ -365,20 +323,19 @@ output$map <- renderLeaflet({ ... })
 
 Every output type has a matching pair:
 
-| UI placeholder | Server render function | What it shows |
-|---|---|---|
-| `plotOutput()` | `renderPlot()` | Static ggplot |
-| `plotlyOutput()` | `renderPlotly()` | Interactive plot |
-| `leafletOutput()` | `renderLeaflet()` | Interactive map |
-| `textOutput()` | `renderText()` | Plain text |
-| `DTOutput()` | `renderDT()` | Interactive table |
-| `uiOutput()` | `renderUI()` | Dynamic UI elements |
+| UI placeholder    | Server render function | What it shows       |
+|-------------------|------------------------|---------------------|
+| `plotOutput()`    | `renderPlot()`         | Static ggplot       |
+| `plotlyOutput()`  | `renderPlotly()`       | Interactive plot    |
+| `leafletOutput()` | `renderLeaflet()`      | Interactive map     |
+| `textOutput()`    | `renderText()`         | Plain text          |
+| `DTOutput()`      | `renderDT()`           | Interactive table   |
+| `uiOutput()`      | `renderUI()`           | Dynamic UI elements |
 
 ::: callout-warning
 ## Common mistake
-Forgetting to load the `{DT}` package when using 
-`DTOutput()` and `renderDT()`. Always load all 
-packages at the top of your `app.R` file.
+
+Forgetting to load the `{DT}` package when using `DTOutput()` and `renderDT()`. Always load all packages at the top of your `app.R` file.
 :::
 
 ### The server in depth
@@ -394,15 +351,11 @@ server <- function(input, output, session) {
 }
 ```
 
-- `input` — a list of all current input values, 
-  accessed as `input$inputId`
-- `output` — a list where you assign rendered outputs, 
-  accessed as `output$outputId`
-- `session` — information about the current browser 
-  session (advanced use)
+- `input` — a list of all current input values, accessed as `input$inputId`
+- `output` — a list where you assign rendered outputs, accessed as `output$outputId`
+- `session` — information about the current browser session (advanced use)
 
-Inside the server, every output is assigned using 
-a render function:
+Inside the server, every output is assigned using a render function:
 
 ```{r}
 #| eval: false
@@ -418,23 +371,20 @@ server <- function(input, output, session) {
 
 ::: callout-note
 ## What render functions do
+
 A render function does two things:
 
-1. Creates a **reactive context** — it watches 
-   `input$bins` and re-runs automatically whenever 
-   the user moves the slider
-2. Converts R output (a plot, a table, text) into 
-   HTML that the browser can display
+1.  Creates a **reactive context** — it watches `input$bins` and re-runs automatically whenever the user moves the slider
+2.  Converts R output (a plot, a table, text) into HTML that the browser can display
 :::
 
 ### Reactivity
 
-Reactivity is what makes Shiny feel alive. It is the 
-mechanism that connects inputs to outputs automatically.
+Reactivity is what makes Shiny feel alive. It is the mechanism that connects inputs to outputs automatically.
 
 The flow is always:
 
-```
+```         
 User changes input → reactive() updates → render*() re-runs → output updates
 ```
 
@@ -469,29 +419,23 @@ server <- function(input, output, session) {
 
 ::: callout-tip
 ## The power of reactive()
-By wrapping your filtered data in `reactive()`, 
-you filter the data **once** and reuse it across 
-multiple outputs. Without `reactive()`, every 
-output would filter the data independently — 
-slower and harder to maintain.
+
+By wrapping your filtered data in `reactive()`, you filter the data **once** and reuse it across multiple outputs. Without `reactive()`, every output would filter the data independently — slower and harder to maintain.
 :::
 
 ::: callout-warning
 ## Never forget the ()
-When you use a reactive expression inside a 
-render function, always call it with parentheses: 
-`filtered_data()` not `filtered_data`.
 
-Without `()` you get the reactive object itself, 
-not its value — and your code will error.
+When you use a reactive expression inside a render function, always call it with parentheses: `filtered_data()` not `filtered_data`.
+
+Without `()` you get the reactive object itself, not its value — and your code will error.
 :::
 
 ### The complete picture
 
-Here is how all the pieces connect in the dashboard 
-we are about to build:
+Here is how all the pieces connect in the dashboard we are about to build:
 
-```
+```         
 ┌─────────────────────────────────────────────────────┐
 │  UI                                                 │
 │                                                     │
@@ -512,22 +456,15 @@ we are about to build:
 └─────────────────────────────────────────────────────┘
 ```
 
-This diagram describes exactly what we will build 
-in the next sections — one stage at a time.
+This diagram describes exactly what we will build in the next sections — one stage at a time.
 
 ## Layout with bslib
 
-Now we start writing actual app code. In this section 
-we build the skeleton of our malaria dashboard — 
-the layout structure with no data or reactivity yet. 
-By the end you will have a running app that looks 
-like a real dashboard.
+Now we start writing actual app code. In this section we build the skeleton of our malaria dashboard — the layout structure with no data or reactivity yet. By the end you will have a running app that looks like a real dashboard.
 
 ### Create your app.R file
 
-In your project folder, create a new R script and 
-save it as `app.R`. This is where all your app 
-code lives.
+In your project folder, create a new R script and save it as `app.R`. This is where all your app code lives.
 
 Start with this skeleton — copy it exactly:
 
@@ -567,38 +504,29 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 ```
 
-Click **Run App** in RStudio. You should see a 
-plain page with a sidebar on the left and a 
-main panel on the right.
+Click **Run App** in RStudio. You should see a plain page with a sidebar on the left and a main panel on the right.
 
 ::: callout-tip
 ## Tip: always keep a running app
-From this point forward, after every change 
-click **Refresh** (not Run App again) to see 
-your updates. If the app breaks, the error 
-message in the console tells you exactly 
-which line failed.
+
+From this point forward, after every change click **Refresh** (not Run App again) to see your updates. If the app breaks, the error message in the console tells you exactly which line failed.
 :::
 
 ### page_sidebar() layout
 
-`page_sidebar()` gives us the two-pane layout 
-we need — a sidebar for filters and a main 
-area for visualisations.
+`page_sidebar()` gives us the two-pane layout we need — a sidebar for filters and a main area for visualisations.
 
-| Argument | What it does |
-|---|---|
-| `title` | Text shown in the top navigation bar |
-| `sidebar` | Content for the left sidebar panel |
-| `...` | Content for the main right panel |
+| Argument  | What it does                         |
+|-----------|--------------------------------------|
+| `title`   | Text shown in the top navigation bar |
+| `sidebar` | Content for the left sidebar panel   |
+| `...`     | Content for the main right panel     |
 
 ### Adding cards
 
-Cards are the building blocks of a modern dashboard. 
-They are bordered containers that group related content.
+Cards are the building blocks of a modern dashboard. They are bordered containers that group related content.
 
-Update your UI to replace `"Main content goes here"` 
-with this:
+Update your UI to replace `"Main content goes here"` with this:
 
 ```{r}
 #| eval: false
@@ -671,22 +599,17 @@ Refresh your app. You should now see:
 ::: callout-note
 ## What these layout functions do
 
-- `layout_columns()` — places elements side by side, 
-  dividing available width equally. Add 
-  `col_widths = c(6, 6)` to control the split.
-- `card()` — a bordered container for one piece 
-  of content
+- `layout_columns()` — places elements side by side, dividing available width equally. Add `col_widths = c(6, 6)` to control the split.
+- `card()` — a bordered container for one piece of content
 - `card_header()` — a labelled header bar for the card
 - `card_body()` — the main content area of the card
 - `value_box()` — a highlighted KPI summary box
-- `full_screen = TRUE` — adds a button to expand 
-  the card to full screen
+- `full_screen = TRUE` — adds a button to expand the card to full screen
 :::
 
 ### Adding sidebar inputs
 
-Now replace `"Filters go here"` in the sidebar 
-with real input controls:
+Now replace `"Filters go here"` in the sidebar with real input controls:
 
 ```{r}
 #| eval: false
@@ -740,37 +663,28 @@ sidebar = sidebar(
 ),
 ```
 
-Refresh your app. The sidebar should now show 
-a description, two dropdowns, and a slider.
+Refresh your app. The sidebar should now show a description, two dropdowns, and a slider.
 
 ::: callout-warning
 ## Nothing reacts yet
-The inputs are visible but nothing happens when 
-you change them — the server is still empty. 
-That changes in the next section when we wire 
-everything together with reactivity.
+
+The inputs are visible but nothing happens when you change them — the server is still empty. That changes in the next section when we wire everything together with reactivity.
 :::
 
 ### Exercise 1 {.unnumbered}
 
 Before moving on, try these on your own:
 
-**1a.** Change the `theme` of one of the value boxes 
-to `"primary"`. What colour does it become?
+**1a.** Change the `theme` of one of the value boxes to `"primary"`. What colour does it become?
 
-**1b.** Add `col_widths = c(7, 5)` to the 
-`layout_columns()` wrapping the map and bar chart. 
-What changes?
+**1b.** Add `col_widths = c(7, 5)` to the `layout_columns()` wrapping the map and bar chart. What changes?
 
-**1c.** Add a `card_footer()` below the `card_body()` 
-in the trend chart card with the text 
-*"Source: Simulated data for training purposes"*.
+**1c.** Add a `card_footer()` below the `card_body()` in the trend chart card with the text *"Source: Simulated data for training purposes"*.
 
 ::: {.callout-caution collapse="true"}
 ## Show solution
 
-**1a.** Replace `theme = "danger"` with 
-`theme = "primary"` on any value box:
+**1a.** Replace `theme = "danger"` with `theme = "primary"` on any value box:
 
 ```{r}
 #| eval: false
@@ -818,27 +732,25 @@ Before moving to Section 5, confirm:
 - [ ] You see three value boxes across the top
 - [ ] You see two cards side by side in the middle
 - [ ] You see one full-width card at the bottom
-- [ ] The sidebar has a description, two dropdowns, 
-      and a slider
-- [ ] Changing the inputs does nothing yet — 
-      that is expected
-      
+- [ ] The sidebar has a description, two dropdowns, and a slider
+- [ ] Changing the inputs does nothing yet — that is expected
+
 ## Inputs
 
-Inputs are how users talk to your app. When a user 
-changes a dropdown or moves a slider, Shiny passes 
-that value to the server as `input$inputId`.
+Inputs are how users talk to your app. When a user changes a dropdown or moves a slider, Shiny passes that value to the server as `input$inputId`.
 
 ::: callout-note
 ## Three things every input needs
-1. **`inputId`** — unique name, accessed in server as `input$inputId`
-2. **`label`** — text shown above the control
-3. **A value** — `choices`, `value`, or `min/max`
+
+1.  **`inputId`** — unique name, accessed in server as `input$inputId`
+2.  **`label`** — text shown above the control
+3.  **A value** — `choices`, `value`, or `min/max`
 :::
 
 ### Input types
 
 #### selectInput() — dropdown
+
 ```{r}
 #| eval: false
 selectInput(
@@ -852,6 +764,7 @@ selectInput(
 Add `multiple = TRUE` to allow selecting more than one option.
 
 #### radioButtons() — best for 2–4 choices
+
 ```{r}
 #| eval: false
 radioButtons(
@@ -864,6 +777,7 @@ radioButtons(
 ```
 
 #### sliderInput() — numeric range
+
 ```{r}
 #| eval: false
 sliderInput(
@@ -876,10 +790,10 @@ sliderInput(
 )
 ```
 
-Pass two values to `value` for a range slider: 
-`value = c(100, 400)`.
+Pass two values to `value` for a range slider: `value = c(100, 400)`.
 
 #### checkboxInput() — on/off toggle
+
 ```{r}
 #| eval: false
 checkboxInput(
@@ -903,15 +817,13 @@ server <- function(input, output, session) {
 
 ::: callout-warning
 ## Inputs are read-only
-Never write `input$year <- 2021` — you will get 
-an error. To update an input programmatically 
-use `updateSelectInput()` — covered in Section 6.
+
+Never write `input$year <- 2021` — you will get an error. To update an input programmatically use `updateSelectInput()` — covered in Section 6.
 :::
 
 ### conditionalPanel() — dynamic inputs
 
-Show an input only when another input has a 
-specific value:
+Show an input only when another input has a specific value:
 
 ```{r}
 #| eval: false
@@ -940,9 +852,8 @@ sidebar = sidebar(
 
 ::: callout-note
 ## JavaScript dot notation
-Inside `conditionalPanel()` use `input.admin_level` 
-not `input$admin_level` — the condition runs in 
-the browser using JavaScript, not R.
+
+Inside `conditionalPanel()` use `input.admin_level` not `input$admin_level` — the condition runs in the browser using JavaScript, not R.
 :::
 
 ### What the sidebar looks like at this stage
@@ -951,30 +862,23 @@ the browser using JavaScript, not R.
 
 ::: callout-tip
 ## Snapshot
-Run your app now and take a screenshot of your 
-sidebar. Replace the placeholder above with your 
-actual screenshot — save it as 
-`images/sidebar_inputs.png` in your project folder.
+
+Run your app now and take a screenshot of your sidebar. Replace the placeholder above with your actual screenshot — save it as `images/sidebar_inputs.png` in your project folder.
 :::
 
 ### Exercise 2 {.unnumbered}
 
-**2a.** Add a `checkboxInput()` with 
-`inputId = "show_rainfall"`, label 
-*"Show rainfall line"*, ticked by default.
+**2a.** Add a `checkboxInput()` with `inputId = "show_rainfall"`, label *"Show rainfall line"*, ticked by default.
 
-**2b.** Add a `conditionalPanel()` that shows 
-a region `selectInput()` only when 
-`input.admin_level == 'Region'`.
+**2b.** Add a `conditionalPanel()` that shows a region `selectInput()` only when `input.admin_level == 'Region'`.
 
-**2c.** Add a `renderText()` in the server 
-that prints the selected year and district. 
-Display it with `textOutput()` anywhere in the UI.
+**2c.** Add a `renderText()` in the server that prints the selected year and district. Display it with `textOutput()` anywhere in the UI.
 
 ::: {.callout-caution collapse="true"}
 ## Show solution
 
 **2a.**
+
 ```{r}
 #| eval: false
 checkboxInput(
@@ -985,6 +889,7 @@ checkboxInput(
 ```
 
 **2b.**
+
 ```{r}
 #| eval: false
 conditionalPanel(
@@ -999,12 +904,14 @@ conditionalPanel(
 ```
 
 **2c.** UI:
+
 ```{r}
 #| eval: false
 textOutput("selection_summary")
 ```
 
 Server:
+
 ```{r}
 #| eval: false
 output$selection_summary <- renderText({
@@ -1016,46 +923,41 @@ output$selection_summary <- renderText({
 
 ### Pause and check ✅
 
-- [ ] You can add `selectInput()`, `sliderInput()` 
-      and `checkboxInput()` to the sidebar
+- [ ] You can add `selectInput()`, `sliderInput()` and `checkboxInput()` to the sidebar
 - [ ] You know `inputId` connects UI to server
 - [ ] You understand `input.x` vs `input$x`
-- [ ] Your app runs without errors   
+- [ ] Your app runs without errors
 
 ## Outputs and Reactivity
 
-This is the most important section. Everything in 
-the dashboard stages depends on this.
+This is the most important section. Everything in the dashboard stages depends on this.
 
 ### The core loop
 
-```
+```         
 User changes input → reactive() updates → render*() re-runs → output updates
 ```
 
 ### Output types
 
-Every output has a matching UI placeholder and 
-server render function:
+Every output has a matching UI placeholder and server render function:
 
-| UI placeholder | Server function | Shows |
-|---|---|---|
-| `textOutput()` | `renderText()` | Plain text / KPI values |
-| `plotlyOutput()` | `renderPlotly()` | Interactive plots |
-| `leafletOutput()` | `renderLeaflet()` | Interactive maps |
-| `DTOutput()` | `renderDT()` | Sortable tables |
+| UI placeholder    | Server function   | Shows                   |
+|-------------------|-------------------|-------------------------|
+| `textOutput()`    | `renderText()`    | Plain text / KPI values |
+| `plotlyOutput()`  | `renderPlotly()`  | Interactive plots       |
+| `leafletOutput()` | `renderLeaflet()` | Interactive maps        |
+| `DTOutput()`      | `renderDT()`      | Sortable tables         |
 
 ::: callout-warning
 ## IDs must match exactly
-`plotlyOutput("bar_chart")` in UI must match 
-`output$bar_chart` in server. R is case-sensitive — 
-`bar_chart` and `Bar_Chart` are different IDs.
+
+`plotlyOutput("bar_chart")` in UI must match `output$bar_chart` in server. R is case-sensitive — `bar_chart` and `Bar_Chart` are different IDs.
 :::
 
 ### reactive() — the bridge between inputs and outputs
 
-`reactive()` filters data once and shares the 
-result across all outputs:
+`reactive()` filters data once and shares the result across all outputs:
 
 ```{r}
 #| eval: false
@@ -1081,6 +983,7 @@ server <- function(input, output, session) {
 
 ::: callout-warning
 ## Always use () when calling reactive expressions
+
 ```{r}
 #| eval: false
 df <- filtered_data    # WRONG — returns the object
@@ -1201,8 +1104,7 @@ output$map <- renderLeaflet({
 
 ### observeEvent() — for side effects
 
-Use when you want to react to an input but not 
-produce an output — like updating a dropdown:
+Use when you want to react to an input but not produce an output — like updating a dropdown:
 
 ```{r}
 #| eval: false
@@ -1227,16 +1129,16 @@ observeEvent(input$region, {
 
 ::: callout-note
 ## observe() vs observeEvent()
+
 - `observe()` — reacts to ANY change inside it
-- `observeEvent(input$x, {...})` — reacts only 
-  when `input$x` changes
+- `observeEvent(input$x, {...})` — reacts only when `input$x` changes
 
 Use `observeEvent()` — it is more predictable.
 :::
 
 ### How reactivity flows in our dashboard
 
-```
+```         
 input$year or input$region changes
         │
         ▼
@@ -1251,18 +1153,15 @@ input$year or input$region changes
 
 ### Exercise 3 {.unnumbered}
 
-**3a.** Add a `renderText()` that shows the 
-count of high-burden districts (above the 
-threshold slider value). Display in a 
-`value_box()` with `theme = "warning"`.
+**3a.** Add a `renderText()` that shows the count of high-burden districts (above the threshold slider value). Display in a `value_box()` with `theme = "warning"`.
 
-**3b.** Add `observeEvent()` to update the 
-district dropdown when region changes.
+**3b.** Add `observeEvent()` to update the district dropdown when region changes.
 
 ::: {.callout-caution collapse="true"}
 ## Show solution
 
 **3a.** UI:
+
 ```{r}
 #| eval: false
 value_box(
@@ -1274,6 +1173,7 @@ value_box(
 ```
 
 Server:
+
 ```{r}
 #| eval: false
 output$kpi_count <- renderText({
@@ -1284,6 +1184,7 @@ output$kpi_count <- renderText({
 ```
 
 **3b.**
+
 ```{r}
 #| eval: false
 observeEvent(input$region, {
@@ -1307,9 +1208,8 @@ observeEvent(input$region, {
 
 ### Pause and check ✅
 
-- [ ] You understand input → reactive() → render*() → output
+- [ ] You understand input → reactive() → render\*() → output
 - [ ] `reactive()` filters once, shared by all outputs
 - [ ] Always call reactive expressions with `()`
 - [ ] UI placeholder ID matches server `output$ID`
-- [ ] `observeEvent()` handles side effects like 
-      updating dropdowns
+- [ ] `observeEvent()` handles side effects like updating dropdowns
