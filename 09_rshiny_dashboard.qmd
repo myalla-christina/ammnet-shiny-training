@@ -10,11 +10,11 @@ format:
     toc-depth: 3
     toc-title: "On this page"
     number-sections: true
-    theme: cosmo
+    theme: 
+      - flatly
     code-fold: false
     code-tools: true
     highlight-style: github
-    embed-resources: false
 execute:
   echo: true
   eval: false
@@ -24,28 +24,27 @@ execute:
 
 ### Create a project folder
 
-Before writing any code, set up a clean project structure in RStudio:
+Before writing any code, set up a clean project 
+structure in RStudio:
 
 `File → New Project → New Directory → New Project`
 
-Name it something like `malaria-shiny-hackathon` and choose a sensible location on your computer.
+Name it `malaria-shiny-hackathon` and choose a 
+sensible location on your computer.
 
-Inside your project folder, create the following sub-folders:
+Your project should have the following structure:
 
-```         
-malaria-shiny-hackathon/
-├── app.R
-├── data/
-└── www/
 ```
-
-- `app.R` — your Shiny app (we will create this later)
-- `data/` — where the training dataset lives
-- `www/` — where images and logos go
+malaria-shiny-hackathon/
+├── app.R          ← your Shiny app (create this)
+├── data/          ← provided datasets go here
+└── www/           ← logo and images go here
+```
 
 ### Required packages
 
-Run this once in your console to install any missing packages:
+Run this once in your console to install any 
+missing packages:
 
 ```{r}
 #| eval: false
@@ -53,8 +52,9 @@ pkgs <- c("shiny", "bslib", "tidyverse",
           "leaflet", "sf", "plotly",
           "DT", "bsicons", "scales")
 
-install.packages(pkgs[!pkgs %in% 
-  rownames(installed.packages())])
+install.packages(
+  pkgs[!pkgs %in% rownames(installed.packages())]
+)
 ```
 
 Then load them at the top of every session:
@@ -74,63 +74,86 @@ library(scales)
 
 ### Training dataset
 
-For this session we use a simulated district-level malaria dataset for Tanzania. It contains monthly incidence and rainfall data across 50 districts for the years 2020–2023.
+For this session you will use a pre-prepared dataset 
+for **Burkina Faso** covering 2020–2023. The dataset 
+uses the real Burkina Faso district shapefile from 
+the Malaria Atlas Project, with simulated malaria 
+and intervention indicators that reflect realistic 
+epidemiological patterns for the country.
 
-Run this code to generate and save the dataset into your `data/` folder:
+::: callout-important
+## Download the training data
+Download the three `.rds` files from the link below 
+and save them into your project's `data/` folder 
+before starting:
+
+📁 **[Download training data](#)**
+
+Your `data/` folder should contain:
+
+- `malaria_data.rds` — monthly data for all districts
+- `annual_summary.rds` — annual KPI summaries
+- `bfa_districts.rds` — Burkina Faso district shapefile
+:::
+
+### Load the data
+
+At the top of your `app.R`, after loading packages, 
+add:
 
 ```{r}
 #| eval: false
-set.seed(42)
-
-districts <- paste("District", 1:50)
-years     <- 2020:2023
-months    <- 1:12
-
-malaria_data <- expand.grid(
-  district = districts,
-  year     = years,
-  month    = months
-) |>
-  mutate(
-    rainfall_mm  = round(runif(n(), 10, 300), 1),
-    incidence    = round(
-      50 + 0.8 * rainfall_mm + 
-      rnorm(n(), 0, 20), 1),
-    incidence    = pmax(incidence, 0),
-    population   = sample(10000:200000, n(), 
-                          replace = TRUE),
-    region       = case_when(
-      district %in% paste("District", 1:10)  
-        ~ "Northern",
-      district %in% paste("District", 11:20) 
-        ~ "Southern",
-      district %in% paste("District", 21:30) 
-        ~ "Eastern",
-      district %in% paste("District", 31:40) 
-        ~ "Western",
-      TRUE ~ "Central"
-    )
-  )
-
-saveRDS(malaria_data, "data/malaria_data.rds")
+# load training datasets
+malaria_data <- readRDS("data/malaria_data.rds")
+annual_df    <- readRDS("data/annual_summary.rds")
+district_shp <- readRDS("data/bfa_districts.rds")
 ```
+
+### Quick data check
+
+Run this in your console to confirm everything 
+loaded correctly:
+
+```{r}
+#| eval: false
+# monthly data
+glimpse(malaria_data)
+
+# how many districts and years?
+cat("Districts:", n_distinct(malaria_data$district), "\n")
+cat("Regions:",   n_distinct(malaria_data$region),   "\n")
+cat("Years:",     unique(malaria_data$year),          "\n")
+cat("Months:",    unique(malaria_data$month),         "\n")
+
+# shapefile check
+plot(sf::st_geometry(district_shp),
+     main = "Burkina Faso — Districts")
+```
+
+You should see:
+
+- **45 districts** across **13 regions**
+- **4 years** × **12 months** = 2,160 rows per district
+- A map of Burkina Faso districts
+
+![Burkina Faso district map](images/bfa_map_check.png)
 
 ::: callout-note
 ## About this dataset
+The shapefile is real — downloaded from the 
+Malaria Atlas Project using the `malariaAtlas` 
+R package. The incidence, rainfall, and ITN 
+coverage values are simulated to reflect realistic 
+epidemiological patterns for Burkina Faso:
 
-- **district** — district name (50 districts)
-- **year** — 2020 to 2023
-- **month** — 1 to 12
-- **rainfall_mm** — monthly rainfall in millimetres
-- **incidence** — malaria incidence per 1,000 population
-- **population** — district population
-- **region** — one of five regions
-:::
-
-::: callout-tip
-## Why simulated data?
-
-Real malaria datasets often require data sharing agreements and cleaning time. Simulated data lets us focus entirely on learning Shiny — and the rainfall-incidence relationship is built in so your trend chart will tell a realistic story.
+- Higher burden in the south and southwest 
+  (wetter, higher transmission)
+- Lower burden in the north and Sahel 
+  (drier, lower transmission)
+- Rainfall peaks July–August (Sahel wet season)
+- Malaria incidence peaks September–October 
+  (6-week lag behind rainfall)
+- ITN coverage improves gradually 2020–2023
 :::
 
 ## What is Shiny?
@@ -304,14 +327,8 @@ Every input has an `inputId`. This is how the server knows which input changed. 
 - Unique: no two inputs can share the same ID
 :::
 
-Here are the input types we use in this session:
-
-| Function          | What it shows   | When to use    |
-|-------------------|-----------------|----------------|
-| `selectInput()`   | Dropdown menu   | Long lists     |
-| `radioButtons()`  | Radio buttons   | 2–4 choices    |
-| `sliderInput()`   | Slider          | Numeric ranges |
-| `checkboxInput()` | Single checkbox | On/off toggle  |
+Here are the common input types:
+![Basic Widgets](images/basic-widgets.png)
 
 ### Output placeholders
 
