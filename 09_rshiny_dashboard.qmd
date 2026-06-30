@@ -1235,3 +1235,1274 @@ observeEvent(input$region, {
 - [ ] Always call reactive expressions with `()`
 - [ ] UI placeholder ID matches server `output$ID`
 - [ ] `observeEvent()` handles side effects like updating dropdowns
+
+## Stage 1: The Skeleton
+
+**Goal:** Build the layout before touching any data 
+or reactivity. By the end your app runs and looks 
+like a dashboard — with no data in it yet.
+
+![Stage 1 — empty dashboard skeleton](images/stage1_skeleton.png)
+
+::: callout-note
+## What you learn in this stage
+- `page_sidebar()` layout structure
+- `layout_columns()` for side-by-side elements
+- `card()` and `value_box()` as containers
+- The app runs with an empty server
+:::
+
+### Step 1 — Create app.R
+
+Create a new file called `app.R` in your 
+project root. Copy this exactly:
+
+```{r}
+#| eval: false
+# ── packages ─────────────────────────────────────────
+library(shiny)
+library(bslib)
+library(tidyverse)
+library(leaflet)
+library(sf)
+library(plotly)
+library(DT)
+library(bsicons)
+library(scales)
+library(htmltools)
+
+# ── ui ───────────────────────────────────────────────
+ui <- page_sidebar(
+  title = "Malaria Burden Explorer — Burkina Faso",
+  
+  sidebar = sidebar(
+    p("Filters will go here")
+  ),
+  
+  # ── row 1: value boxes ───────────────────────────
+  layout_columns(
+    height = "150px",
+    value_box(
+      title    = "Mean incidence per 1,000",
+      value    = "—",
+      showcase = bs_icon("activity"),
+      theme    = "danger"
+    ),
+    value_box(
+      title    = "High burden districts",
+      value    = "—",
+      showcase = bs_icon("exclamation-triangle"),
+      theme    = "warning"
+    ),
+    value_box(
+      title    = "Mean ITN coverage",
+      value    = "—",
+      showcase = bs_icon("shield-check"),
+      theme    = "success"
+    )
+  ),
+  
+  # ── row 2: map + bar chart ───────────────────────
+  layout_columns(
+    card(
+      full_screen = TRUE,
+      card_header("Incidence by district"),
+      card_body("Map goes here")
+    ),
+    card(
+      full_screen = TRUE,
+      card_header("Top districts by burden"),
+      card_body("Bar chart goes here")
+    )
+  ),
+  
+  # ── row 3: trend chart ───────────────────────────
+  card(
+    full_screen = TRUE,
+    card_header("Monthly incidence & rainfall"),
+    card_body("Trend chart goes here"),
+    card_footer(
+      "Source: Malaria Atlas Project · 
+       Simulated data"
+    )
+  )
+)
+
+# ── server ───────────────────────────────────────────
+server <- function(input, output, session) {
+  
+  # empty for now
+  
+}
+
+# ── launch ───────────────────────────────────────────
+shinyApp(ui, server)
+```
+
+### Step 2 — Run your app
+
+Click **Run App**. You should see:
+
+- A header bar with the dashboard title
+- Three value boxes showing `"—"` across the top
+- Two placeholder cards side by side
+- One full-width placeholder card at the bottom
+- An empty sidebar
+
+![Stage 1 running — layout with placeholders](images/stage1_running.png)
+
+::: callout-tip
+## Snapshot
+Take a screenshot of your running app. 
+Save as `images/stage1_running.png`.
+:::
+
+### What just happened
+
+You have a running Shiny app with zero data 
+and zero reactivity. The server is completely 
+empty. This confirms the layout works before 
+we add any complexity.
+
+```
+page_sidebar()
+├── sidebar()           ← left panel
+└── main panel
+    ├── layout_columns()
+    │   ├── value_box() ← KPI 1
+    │   ├── value_box() ← KPI 2
+    │   └── value_box() ← KPI 3
+    ├── layout_columns()
+    │   ├── card()      ← map placeholder
+    │   └── card()      ← bar chart placeholder
+    └── card()          ← trend placeholder
+```
+
+### Exercise 1 {.unnumbered}
+
+**1a.** Change the `height` of `layout_columns()` 
+wrapping the value boxes from `"150px"` to 
+`"200px"`. What changes?
+
+**1b.** Add a fourth `value_box()` with
+`title = "Total estimated cases"`, 
+`value = "—"`, `bs_icon("people")`, 
+`theme = "info"`.
+
+**1c.** Add `col_widths = c(7, 5)` to the 
+`layout_columns()` wrapping the map and bar 
+chart. Which card gets wider?
+
+::: {.callout-caution collapse="true"}
+## Show solution
+
+**1a.** The value box row becomes taller — 
+more breathing room for the KPI values.
+
+**1b.**
+```{r}
+#| eval: false
+value_box(
+  title    = "Total estimated cases",
+  value    = "—",
+  showcase = bs_icon("people"),
+  theme    = "info"
+)
+```
+
+**1c.**
+```{r}
+#| eval: false
+layout_columns(
+  col_widths = c(7, 5),   # map = 7/12, bar = 5/12
+  card(...),              # map card — wider
+  card(...)               # bar chart card — narrower
+)
+```
+:::
+
+### Pause and check ✅
+
+- [ ] App runs without errors
+- [ ] Three value boxes show `"—"` across the top
+- [ ] Two cards appear side by side
+- [ ] One full-width card at the bottom
+- [ ] Sidebar shows placeholder text
+- [ ] Server is empty — nothing is reactive yet
+
+---
+
+## Stage 2: Data, Inputs and KPIs
+
+**Goal:** Load real data, add sidebar inputs, 
+and make the three value boxes reactive. 
+By the end changing the year dropdown updates 
+all three KPI numbers instantly.
+
+::: callout-note
+## What you learn in this stage
+- Loading RDS data into the app
+- `selectInput()` and `sliderInput()` in the sidebar
+- `reactive()` filter data once, share everywhere
+- `renderText()` + `textOutput()` pair
+- `observeEvent()` to update a dropdown
+:::
+
+### Step 1 — Load the data
+
+Confirm and load the data if not loaded.
+
+```{r}
+#| eval: false
+# ── data ─────────────────────────────────────────────
+malaria_data <- readRDS("data/malaria_data.rds")
+annual_df    <- readRDS("data/annual_summary.rds")
+district_shp <- readRDS("data/bfa_districts.rds")
+```
+
+
+### Step 2 — Add inputs to the sidebar
+
+Replace `p("Filters will go here")` with:
+
+```{r}
+#| eval: false
+sidebar = sidebar(
+  
+  p("Explore district-level malaria burden 
+     across Burkina Faso."),
+  hr(),
+  
+  selectInput(
+    inputId  = "year",
+    label    = "Year",
+    choices  = sort(unique(malaria_data$year)),
+    selected = max(malaria_data$year)
+  ),
+  
+  selectInput(
+    inputId  = "region",
+    label    = "Region",
+    choices  = c("All regions",
+                 sort(unique(malaria_data$region))),
+    selected = "All regions"
+  ),
+  
+  selectInput(
+    inputId  = "district",
+    label    = "District (trend chart)",
+    choices  = sort(unique(malaria_data$district)),
+    selected = sort(unique(malaria_data$district))[1]
+  ),
+  
+  hr(),
+  
+  sliderInput(
+    inputId = "threshold",
+    label   = "High burden threshold (per 1,000)",
+    min     = 0,
+    max     = 500,
+    value   = 200,
+    step    = 10
+  )
+),
+```
+
+Run the app — inputs appear but nothing 
+reacts yet. That changes in the next step.
+
+![Stage 2 sidebar with inputs](images/stage2_sidebar.png)
+
+::: callout-tip
+## Snapshot
+Take a screenshot of the sidebar showing 
+all inputs. Save as `images/stage2_sidebar.png`.
+:::
+
+### Step 3 — Connect value boxes to data
+
+Replace the three hardcoded `value = "—"` 
+with `textOutput()` placeholders:
+
+```{r}
+#| eval: false
+value_box(
+  title    = "Mean incidence per 1,000",
+  value    = textOutput("kpi_mean"),      # ← changed
+  showcase = bs_icon("activity"),
+  theme    = "danger"
+),
+value_box(
+  title    = "High burden districts",
+  value    = textOutput("kpi_count"),     # ← changed
+  showcase = bs_icon("exclamation-triangle"),
+  theme    = "warning"
+),
+value_box(
+  title    = "Mean ITN coverage",
+  value    = textOutput("kpi_itn"),       # ← changed
+  showcase = bs_icon("shield-check"),
+  theme    = "success"
+)
+```
+
+### Step 4 — Add server logic
+
+Replace your empty server with this:
+
+```{r}
+#| eval: false
+server <- function(input, output, session) {
+  
+  # ── reactive dataset ─────────────────────────────
+  # filters once — shared by all outputs
+  filtered_data <- reactive({
+    malaria_data |>
+      filter(
+        year == input$year,
+        input$region == "All regions" |
+          region == input$region
+      )
+  })
+  
+  # ── update district when region changes ──────────
+  observeEvent(input$region, {
+    choices <- if (input$region == "All regions") {
+      sort(unique(malaria_data$district))
+    } else {
+      malaria_data |>
+        filter(region == input$region) |>
+        pull(district) |>
+        unique() |>
+        sort()
+    }
+    updateSelectInput(
+      session  = session,
+      inputId  = "district",
+      choices  = choices,
+      selected = choices[1]
+    )
+  })
+  
+  # ── KPI outputs ──────────────────────────────────
+  output$kpi_mean <- renderText({
+    round(
+      mean(filtered_data()$incidence,
+           na.rm = TRUE), 1)
+  })
+  
+  output$kpi_count <- renderText({
+    df <- filtered_data()
+    n_distinct(
+      df$district[df$incidence >= input$threshold]
+    )
+  })
+  
+  output$kpi_itn <- renderText({
+    paste0(
+      round(
+        mean(filtered_data()$itn_coverage,
+             na.rm = TRUE), 1), "%"
+    )
+  })
+  
+}
+```
+
+### Step 5 — Run your app
+
+Click **Run App**. You should now see:
+
+- Three value boxes showing real numbers
+- Changing year updates all three instantly
+- Moving the threshold slider updates 
+  the high burden count
+- Changing region filters all KPIs
+
+![Stage 2 complete — reactive KPIs](images/stage2_complete.png)
+
+::: callout-tip
+## Snapshot
+Take a screenshot showing the three value 
+boxes with real numbers. Save as 
+`images/stage2_complete.png`.
+:::
+
+::: callout-note
+## Why reactive() not filter() inside each output?
+
+Without `reactive()`:
+```{r}
+#| eval: false
+# filters 3 times — one per output
+output$kpi_mean  <- renderText({ 
+  malaria_data |> filter(year == input$year) |> ... 
+})
+output$kpi_count <- renderText({ 
+  malaria_data |> filter(year == input$year) |> ... 
+})
+output$kpi_itn   <- renderText({ 
+  malaria_data |> filter(year == input$year) |> ... 
+})
+```
+
+With `reactive()`:
+```{r}
+#| eval: false
+# filters once — shared by all outputs
+filtered_data <- reactive({
+  malaria_data |> filter(year == input$year)
+})
+
+output$kpi_mean  <- renderText({ 
+  mean(filtered_data()$incidence) 
+})
+output$kpi_count <- renderText({ 
+  n_distinct(filtered_data()$district) 
+})
+output$kpi_itn   <- renderText({ 
+  mean(filtered_data()$itn_coverage) 
+})
+```
+
+One filter, three outputs. Faster and 
+easier to maintain.
+:::
+
+### Exercise 2 {.unnumbered}
+
+**2a.** Add a fourth value box showing the 
+name of the highest burden district. 
+Use `bs_icon("geo-alt")` and `theme = "info"`.
+
+**2b.** Add a `textOutput("sidebar_summary")` 
+below the slider in the sidebar. In the server 
+add a `renderText()` that shows how many 
+districts are currently selected.
+
+**2c.** Move the threshold slider and observe 
+`kpi_count` changing. What happens at 
+threshold = 0? What about 500?
+
+::: {.callout-caution collapse="true"}
+## Show solution
+
+**2a.** UI:
+```{r}
+#| eval: false
+value_box(
+  title    = "Highest burden district",
+  value    = textOutput("kpi_top"),
+  showcase = bs_icon("geo-alt"),
+  theme    = "info"
+)
+```
+
+Server:
+```{r}
+#| eval: false
+output$kpi_top <- renderText({
+  filtered_data() |>
+    group_by(district) |>
+    summarise(
+      mean_inc = mean(incidence, na.rm = TRUE)
+    ) |>
+    slice_max(mean_inc, n = 1) |>
+    pull(district)
+})
+```
+
+**2b.** UI — add below `sliderInput()`:
+```{r}
+#| eval: false
+hr(),
+textOutput("sidebar_summary")
+```
+
+Server:
+```{r}
+#| eval: false
+output$sidebar_summary <- renderText({
+  paste0(
+    n_distinct(filtered_data()$district),
+    " districts selected"
+  )
+})
+```
+
+**2c.** At threshold = 0 all districts are 
+high burden. At 500 none are — `kpi_count` 
+shows 0.
+:::
+
+### Pause and check ✅
+
+- [ ] Data loads without errors
+- [ ] Sidebar shows four inputs
+- [ ] Value boxes show real numbers
+- [ ] Changing year updates all KPIs
+- [ ] Moving slider updates high burden count
+- [ ] Changing region filters correctly
+- [ ] District dropdown updates when 
+      region changes
+- [ ] No errors in the console
+
+---
+
+## Stage 3: Map and Bar Chart
+
+**Goal:** Replace both card placeholders with 
+real interactive visualisations. By the end 
+you have a choropleth map and a ranked bar 
+chart that update together when inputs change.
+
+![Stage 3 — map and bar chart](images/stage3_visuals.png)
+
+::: callout-note
+## What you learn in this stage
+- `leafletOutput()` + `renderLeaflet()` for maps
+- Joining data to a shapefile
+- `colorBin()` for map colour palette
+- `plotlyOutput()` + `renderPlotly()` for charts
+- `ggplot → ggplotly()` conversion
+- One `reactive()` feeding multiple outputs
+:::
+
+### Step 1 — Add two helper functions
+
+Add these below your data loading, 
+before the UI:
+
+```{r}
+#| eval: false
+# ── helpers ──────────────────────────────────────────
+
+# colour palette for the map
+make_pal <- function(values) {
+  colorBin(
+    palette  = "YlOrRd",
+    domain   = values,
+    bins     = c(0, 50, 100, 200,
+                 300, 400, 500, Inf),
+    na.color = "#f0f0f0"
+  )
+}
+
+# top districts summary
+top_districts <- function(df, n = 10) {
+  df |>
+    group_by(district, region) |>
+    summarise(
+      mean_inc = round(
+        mean(incidence,    na.rm = TRUE), 1),
+      mean_itn = round(
+        mean(itn_coverage, na.rm = TRUE), 1),
+      .groups  = "drop"
+    ) |>
+    slice_max(mean_inc, n = n) |>
+    arrange(mean_inc)
+}
+```
+
+::: callout-note
+## Why helper functions?
+`make_pal()` is called inside `renderLeaflet()`. 
+`top_districts()` is called inside both 
+`renderPlotly()` and potentially `renderDT()`. 
+Writing them once outside the server keeps 
+the server clean and avoids repetition.
+:::
+
+### Step 2 — Update the UI
+
+Replace both placeholder cards with output 
+containers:
+
+```{r}
+#| eval: false
+layout_columns(
+  
+  # map card
+  card(
+    full_screen = TRUE,
+    card_header(
+      "Incidence by district",
+      class = "bg-danger text-white"
+    ),
+    card_body(
+      leafletOutput("map", height = "420px")
+    )
+  ),
+  
+  # bar chart card
+  card(
+    full_screen = TRUE,
+    card_header(
+      "Top 10 districts by burden",
+      class = "bg-warning text-dark"
+    ),
+    card_body(
+      plotlyOutput("bar_chart", height = "420px")
+    )
+  )
+  
+)
+```
+
+### Step 3 — Add renderLeaflet() to server
+
+Add below your KPI outputs:
+
+```{r}
+#| eval: false
+# ── map ──────────────────────────────────────────────
+output$map <- renderLeaflet({
+  
+  # summarise to one row per district
+  df <- filtered_data() |>
+    group_by(district) |>
+    summarise(
+      mean_inc = round(
+        mean(incidence, na.rm = TRUE), 1),
+      mean_itn = round(
+        mean(itn_coverage, na.rm = TRUE), 1),
+      .groups  = "drop"
+    )
+  
+  # join to shapefile
+  map_data <- district_shp |>
+    left_join(df, by = "district")
+  
+  # colour palette
+  pal <- make_pal(map_data$mean_inc)
+  
+  # build map
+  leaflet(map_data) |>
+    addProviderTiles(
+      providers$CartoDB.Positron
+    ) |>
+    addPolygons(
+      fillColor   = ~pal(mean_inc),
+      fillOpacity = 0.8,
+      color       = "#444444",
+      weight      = 0.8,
+      label = ~paste0(
+        "<b>", district,    "</b><br>",
+        "Incidence: ", mean_inc, 
+        " per 1,000<br>",
+        "ITN: ",       mean_itn, "%"
+      ) |> lapply(htmltools::HTML),
+      highlightOptions = highlightOptions(
+        weight       = 2,
+        color        = "#222222",
+        fillOpacity  = 0.9,
+        bringToFront = TRUE
+      )
+    ) |>
+    addLegend(
+      pal      = pal,
+      values   = ~mean_inc,
+      position = "bottomright",
+      title    = "Incidence<br>per 1,000"
+    )
+})
+```
+
+### Step 4 — Add renderPlotly() to server
+
+Add below `output$map`:
+
+```{r}
+#| eval: false
+# ── bar chart ─────────────────────────────────────────
+output$bar_chart <- renderPlotly({
+  
+  df <- top_districts(filtered_data())
+  
+  p <- ggplot(df,
+    aes(
+      x    = mean_inc,
+      y    = reorder(district, mean_inc),
+      fill = mean_inc,
+      text = paste0(
+        "<b>", district,      "</b><br>",
+        "Region: ",    region,   "<br>",
+        "Incidence: ", mean_inc, 
+        " per 1,000<br>",
+        "ITN: ",       mean_itn, "%"
+      )
+    )
+  ) +
+  geom_col() +
+  geom_vline(
+    xintercept = input$threshold,
+    linetype   = "dashed",
+    colour     = "#333333",
+    linewidth  = 0.6
+  ) +
+  scale_fill_gradient(
+    low  = "#fdae61",
+    high = "#a50026"
+  ) +
+  scale_x_continuous(
+    labels = comma,
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  labs(
+    x = "Mean incidence per 1,000",
+    y = NULL
+  ) +
+  theme_minimal(12) +
+  theme(legend.position = "none")
+  
+  ggplotly(p, tooltip = "text")
+})
+```
+
+### Step 5 — Run your app
+
+Click **Run App**. You should now see:
+
+- A choropleth map of Burkina Faso on the left
+- A ranked horizontal bar chart on the right
+- Both update when year or region changes
+- Hovering shows district details on both
+
+![Stage 3 map with hover](images/stage3_map_hover.png)
+
+![Stage 3 bar chart with hover](images/stage3_bar_hover.png)
+
+::: callout-tip
+## Snapshots
+Take screenshots of:
+
+1. Map with a district hovered — 
+   `images/stage3_map_hover.png`
+2. Bar chart with a bar hovered — 
+   `images/stage3_bar_hover.png`
+:::
+
+### Exercise 3 {.unnumbered}
+
+**3a.** Change the map background tiles from 
+`CartoDB.Positron` to `Esri.WorldGrayCanvas`. 
+Run `names(providers)` to explore options.
+
+**3b.** Add ITN coverage as a second colour 
+option. Add a `radioButtons()` to the sidebar:
+
+```{r}
+#| eval: false
+radioButtons(
+  inputId  = "map_indicator",
+  label    = "Map indicator",
+  choices  = c("Incidence"     = "mean_inc",
+               "ITN coverage"  = "mean_itn"),
+  selected = "mean_inc",
+  inline   = TRUE
+)
+```
+
+Then update `renderLeaflet()` to use 
+`input$map_indicator` to select which 
+column to colour by.
+
+**3c.** Add `col_widths = c(6, 6)` to the 
+`layout_columns()` — confirm both cards 
+are equal width.
+
+::: {.callout-caution collapse="true"}
+## Show solution
+
+**3a.**
+```{r}
+#| eval: false
+addProviderTiles(providers$Esri.WorldGrayCanvas)
+```
+
+**3b.** Update `renderLeaflet()`:
+```{r}
+#| eval: false
+# use selected indicator
+indicator <- input$map_indicator
+
+pal <- make_pal(map_data[[indicator]])
+
+addPolygons(
+  fillColor = ~pal(map_data[[indicator]]),
+  ...
+)
+```
+
+**3c.**
+```{r}
+#| eval: false
+layout_columns(
+  col_widths = c(6, 6),
+  card(...),   # map
+  card(...)    # bar chart
+)
+```
+:::
+
+### Pause and check ✅
+
+- [ ] Choropleth map appears on load
+- [ ] Districts coloured yellow to red
+- [ ] Hovering shows district details
+- [ ] Bar chart shows top 10 districts
+- [ ] Dashed threshold line visible on bar chart
+- [ ] Both update when year changes
+- [ ] Both update when region changes
+- [ ] No errors in the console
+
+---
+
+## Stage 4: Trend Chart and Polish
+
+**Goal:** Complete the dashboard with the 
+rainfall-incidence trend chart and make it 
+look professional with theming and polish.
+
+![Stage 4 — complete polished dashboard](images/stage4_complete.png)
+
+::: callout-note
+## What you learn in this stage
+- Dual-axis `plotly` chart
+- `bs_theme()` for professional theming
+- `tags$img()` for logo
+- `input_dark_mode()` for dark/light toggle
+- `downloadHandler()` for CSV export
+:::
+
+### Step 1 — Update the trend card in UI
+
+Replace the trend placeholder:
+
+```{r}
+#| eval: false
+card(
+  full_screen = TRUE,
+  card_header(
+    "Monthly incidence & rainfall",
+    class = "bg-info text-dark"
+  ),
+  card_body(
+    plotlyOutput("trend_chart", height = "300px")
+  ),
+  card_footer(
+    "Rainfall peaks July–August · 
+     Incidence peaks September–October"
+  )
+)
+```
+
+### Step 2 — Add renderPlotly() for trend
+
+Add below `output$bar_chart` in server:
+
+```{r}
+#| eval: false
+# ── trend chart ───────────────────────────────────────
+output$trend_chart <- renderPlotly({
+  
+  # all years for selected district
+  df <- malaria_data |>
+    filter(district == input$district)
+  
+  p <- ggplot(df, aes(x = month)) +
+    
+    # rainfall bars — background
+    geom_col(
+      aes(
+        y    = rainfall_mm / 3,
+        text = paste0(
+          "Month: ",    month.abb[month], "<br>",
+          "Rainfall: ", rainfall_mm, " mm"
+        )
+      ),
+      fill  = "#378ADD",
+      alpha = 0.4
+    ) +
+    
+    # incidence lines — one per year
+    geom_line(
+      aes(
+        y      = monthly_incidence,
+        colour = factor(year),
+        group  = year,
+        text   = paste0(
+          "Month: ",     month.abb[month], "<br>",
+          "Year: ",      year,             "<br>",
+          "Incidence: ", monthly_incidence,
+          " per 1,000"
+        )
+      ),
+      linewidth = 1
+    ) +
+    geom_point(
+      aes(
+        y      = monthly_incidence,
+        colour = factor(year),
+        group  = year
+      ),
+      size = 2
+    ) +
+    
+    scale_x_continuous(
+      breaks = 1:12,
+      labels = month.abb
+    ) +
+    scale_colour_brewer(
+      palette = "Set2",
+      name    = "Year"
+    ) +
+    scale_y_continuous(
+      name     = "Monthly incidence per 1,000",
+      sec.axis = sec_axis(
+        transform = ~. * 3,
+        name      = "Rainfall (mm)"
+      )
+    ) +
+    labs(
+      x     = NULL,
+      title = paste0(input$district, 
+                     " — seasonal pattern")
+    ) +
+    theme_minimal(12) +
+    theme(
+      axis.title.y.right = element_text(
+        colour = "#378ADD"
+      )
+    )
+  
+  ggplotly(p, tooltip = "text") |>
+    layout(
+      legend = list(
+        orientation = "h",
+        y           = -0.2
+      )
+    )
+})
+```
+
+![Stage 4 trend chart showing lag](images/stage4_trend.png)
+
+::: callout-tip
+## Snapshot
+Take a screenshot showing the seasonal 
+pattern clearly — rainfall bars and 
+incidence lines peaking at different months. 
+Save as `images/stage4_trend.png`.
+:::
+
+### Step 3 — Add a theme
+
+Add `theme` argument to `page_sidebar()`:
+
+```{r}
+#| eval: false
+ui <- page_sidebar(
+  title = "Malaria Burden Explorer — Burkina Faso",
+  
+  theme = bs_theme(
+    version    = 5,
+    bootswatch = "flatly",
+    base_font  = font_google("Inter")
+  ),
+  ...
+)
+```
+
+### Step 4 — Add logo and dark mode toggle
+
+At the top of `sidebar()` add:
+
+```{r}
+#| eval: false
+sidebar = sidebar(
+  
+  # logo — save your image as www/logo.png
+  tags$img(
+    src   = "logo.png",
+    width = "100%",
+    style = "margin-bottom: 10px;"
+  ),
+  
+  # dark/light toggle
+  input_dark_mode(mode = "light"),
+  
+  p("Explore district-level malaria burden 
+     across Burkina Faso."),
+  hr(),
+  ...
+)
+```
+
+![Stage 4 sidebar with logo and dark mode](images/stage4_sidebar.png)
+
+### Step 5 — Add download button
+
+Add to sidebar below the slider:
+
+```{r}
+#| eval: false
+hr(),
+downloadButton(
+  "download_data",
+  "Download filtered data"
+)
+```
+
+Add to server:
+
+```{r}
+#| eval: false
+output$download_data <- downloadHandler(
+  filename = function() {
+    paste0("malaria_bfa_", input$year, ".csv")
+  },
+  content = function(file) {
+    write.csv(
+      filtered_data(),
+      file,
+      row.names = FALSE
+    )
+  }
+)
+```
+
+### Step 6 — Run your complete dashboard
+
+Click **Run App**. You now have a complete 
+professional malaria burden dashboard:
+
+- Header with title
+- Sidebar with logo, dark mode, inputs, download
+- Three reactive KPI value boxes
+- Interactive choropleth map
+- Ranked bar chart with threshold line
+- Dual-axis trend chart
+- Professional Bootswatch theme
+
+![Complete dashboard — all stages combined](images/stage4_final.png)
+
+::: callout-tip
+## Final snapshot
+Take a full screenshot of the complete 
+dashboard. Save as `images/stage4_final.png`.
+
+This is your evidence of what you built today!
+:::
+
+### Exercise 4 {.unnumbered}
+
+**4a.** Try three different Bootswatch themes — 
+`"cosmo"`, `"minty"`, `"sandstone"`. 
+Which looks best with the malaria colour palette?
+
+**4b.** Add a `selectInput()` to control 
+how many districts appear in the bar chart:
+
+```{r}
+#| eval: false
+selectInput(
+  inputId  = "n_districts",
+  label    = "Districts to show",
+  choices  = c(5, 10, 15, 20),
+  selected = 10
+)
+```
+
+Connect it to `top_districts(n = as.integer(input$n_districts))`.
+
+**4c.** Add a `DT::dataTableOutput("data_table")` 
+in a new card below the trend chart. 
+In the server add `renderDT()` showing 
+district, region, incidence and ITN coverage 
+for the filtered data sorted by incidence.
+
+::: {.callout-caution collapse="true"}
+## Show solution
+
+**4a.** Update `bs_theme()`:
+```{r}
+#| eval: false
+theme = bs_theme(
+  version    = 5,
+  bootswatch = "minty"   # try cosmo, sandstone
+)
+```
+
+**4b.** Update `renderPlotly()`:
+```{r}
+#| eval: false
+df <- top_districts(
+  filtered_data(),
+  n = as.integer(input$n_districts)
+)
+```
+
+**4c.** UI — add new card after trend:
+```{r}
+#| eval: false
+card(
+  full_screen = TRUE,
+  card_header("District data table"),
+  card_body(
+    DTOutput("data_table")
+  )
+)
+```
+
+Server:
+```{r}
+#| eval: false
+output$data_table <- renderDT({
+  filtered_data() |>
+    group_by(district, region) |>
+    summarise(
+      incidence    = round(
+        mean(incidence,    na.rm = TRUE), 1),
+      itn_coverage = round(
+        mean(itn_coverage, na.rm = TRUE), 1),
+      .groups      = "drop"
+    ) |>
+    arrange(desc(incidence)) |>
+    datatable(
+      rownames = FALSE,
+      options  = list(pageLength = 10)
+    )
+})
+```
+:::
+
+### Pause and check ✅
+
+- [ ] Trend chart shows rainfall bars 
+      and incidence lines
+- [ ] Rainfall peaks July–August
+- [ ] Incidence peaks September–October
+- [ ] Changing district updates trend chart
+- [ ] Theme applied — app looks professional
+- [ ] Dark/light toggle works
+- [ ] Download button downloads a CSV
+- [ ] All four stages work together
+- [ ] No errors in the console
+
+---
+
+## Deployment
+
+Your dashboard is ready to share publicly 
+via **shinyapps.io** — free hosting for 
+Shiny apps.
+
+### Step 1 — Create a free account
+
+Go to **shinyapps.io** and sign up.
+
+### Step 2 — Install rsconnect
+
+```{r}
+#| eval: false
+install.packages("rsconnect")
+```
+
+### Step 3 — Connect your account
+
+In RStudio:
+`Tools → Global Options → Publishing → Connect`
+
+Or run in console:
+
+```{r}
+#| eval: false
+rsconnect::setAccountInfo(
+  name   = "your-username",
+  token  = "YOUR_TOKEN",
+  secret = "YOUR_SECRET"
+)
+```
+
+Your token and secret are on your 
+shinyapps.io dashboard under 
+`Account → Tokens`.
+
+### Step 4 — Deploy
+
+```{r}
+#| eval: false
+rsconnect::deployApp(
+  appDir  = ".",
+  appName = "malaria-burden-explorer-bfa"
+)
+```
+
+Your app is now live at:
+
+```
+https://your-username.shinyapps.io/
+         malaria-burden-explorer-bfa/
+```
+
+::: callout-warning
+## Free tier limits
+- 5 apps maximum
+- 25 active hours per month
+- Apps sleep after 15 min inactivity
+
+Sufficient for training. For production 
+use consider Posit Connect.
+:::
+
+---
+
+## Next Steps and Resources
+
+You have built a complete interactive malaria 
+burden dashboard from scratch in two hours.
+
+### What you built
+
+```
+✓ bslib layout — page_sidebar, card, value_box
+✓ Inputs — selectInput, sliderInput
+✓ Reactivity — reactive(), observeEvent()
+✓ Text output — renderText() + textOutput()
+✓ Map — renderLeaflet() + leafletOutput()
+✓ Chart — renderPlotly() + plotlyOutput()
+✓ Theme — bs_theme() + bootswatch
+✓ Deployment — shinyapps.io
+```
+
+### Where to go next
+
+**Scale your code** — as your app grows, 
+split `app.R` into separate files:
+
+```
+global.R   ← packages, data, helpers
+ui.R       ← ui object
+server.R   ← server function
+app.R      ← shinyApp(ui, server) only
+```
+
+**Key resources:**
+
+| Resource | Link |
+|---|---|
+| Mastering Shiny | mastering-shiny.org |
+| bslib docs | rstudio.github.io/bslib |
+| Shiny gallery | shiny.posit.co/r/gallery |
+| AMMnet community | ammnet.org |
+
+::: callout-tip
+## Keep building
+Adapt this dashboard to your own country 
+or programme data. The patterns you learned 
+today — reactive(), renderLeaflet(), 
+renderPlotly() — are the same ones used 
+in production dashboards at national 
+malaria programmes across Africa.
+:::
