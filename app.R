@@ -4,16 +4,16 @@
 # install.packages(pkgs[!pkgs%in%
 #                         rownames(installed.packages())])
 # 
-# #load libraries
-# library(shiny)
-# library(bslib)
-# library(tidyverse)
-# library(leaflet)
-# library(sf)
-# library(plotly)
-# library(DT)
-# library(bsicons)
-# library(scales)
+#load libraries
+library(shiny)
+library(bslib)
+library(tidyverse)
+library(leaflet)
+library(sf)
+library(plotly)
+library(DT)
+library(bsicons)
+library(scales)
 # 
 # 
 # # set.seed(42)

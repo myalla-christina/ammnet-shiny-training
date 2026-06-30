@@ -24,17 +24,15 @@ execute:
 
 ### Create a project folder
 
-Before writing any code, set up a clean project 
-structure in RStudio:
+Before writing any code, set up a clean project structure in RStudio:
 
 `File → New Project → New Directory → New Project`
 
-Name it `malaria-shiny-hackathon` and choose a 
-sensible location on your computer.
+Name it `malaria-shiny-hackathon` and choose a sensible location on your computer.
 
 Your project should have the following structure:
 
-```
+```         
 malaria-shiny-hackathon/
 ├── app.R          ← your Shiny app (create this)
 ├── data/          ← provided datasets go here
@@ -43,8 +41,7 @@ malaria-shiny-hackathon/
 
 ### Required packages
 
-Run this once in your console to install any 
-missing packages:
+Run this once in your console to install any missing packages:
 
 ```{r}
 #| eval: false
@@ -74,20 +71,14 @@ library(scales)
 
 ### Training dataset
 
-For this session you will use a pre-prepared dataset 
-for **Burkina Faso** covering 2020–2023. The dataset 
-uses the real Burkina Faso district shapefile from 
-the Malaria Atlas Project, with simulated malaria 
-and intervention indicators that reflect realistic 
-epidemiological patterns for the country.
+For this session you will use a pre-prepared dataset for **Burkina Faso** covering 2020–2023. The dataset uses the real Burkina Faso district shapefile from the Malaria Atlas Project, with simulated malaria and intervention indicators that reflect realistic epidemiological patterns for the country.
 
 ::: callout-important
 ## Download the training data
-Download the three `.rds` files from the link below 
-and save them into your project's `data/` folder 
-before starting:
 
-📁 **[Download training data](#)**
+Download the three `.rds` files from the link below and save them into your project's `data/` folder before starting:
+
+📁 [**Download training data**](#)
 
 Your `data/` folder should contain:
 
@@ -98,8 +89,7 @@ Your `data/` folder should contain:
 
 ### Load the data
 
-At the top of your `app.R`, after loading packages, 
-add:
+At the top of your `app.R`, after loading packages, add:
 
 ```{r}
 #| eval: false
@@ -111,8 +101,7 @@ district_shp <- readRDS("data/bfa_districts.rds")
 
 ### Quick data check
 
-Run this in your console to confirm everything 
-loaded correctly:
+Run this in your console to confirm everything loaded correctly:
 
 ```{r}
 #| eval: false
@@ -140,19 +129,13 @@ You should see:
 
 ::: callout-note
 ## About this dataset
-The shapefile is real — downloaded from the 
-Malaria Atlas Project using the `malariaAtlas` 
-R package. The incidence, rainfall, and ITN 
-coverage values are simulated to reflect realistic 
-epidemiological patterns for Burkina Faso:
 
-- Higher burden in the south and southwest 
-  (wetter, higher transmission)
-- Lower burden in the north and Sahel 
-  (drier, lower transmission)
+The shapefile is real — downloaded from the Malaria Atlas Project using the `malariaAtlas` R package. The incidence, rainfall, and ITN coverage values are simulated to reflect realistic epidemiological patterns for Burkina Faso:
+
+- Higher burden in the south and southwest (wetter, higher transmission)
+- Lower burden in the north and Sahel (drier, lower transmission)
 - Rainfall peaks July–August (Sahel wet season)
-- Malaria incidence peaks September–October 
-  (6-week lag behind rainfall)
+- Malaria incidence peaks September–October (6-week lag behind rainfall)
 - ITN coverage improves gradually 2020–2023
 :::
 
@@ -327,8 +310,7 @@ Every input has an `inputId`. This is how the server knows which input changed. 
 - Unique: no two inputs can share the same ID
 :::
 
-Here are the common input types:
-![Basic Widgets](images/basic-widgets.png)
+Here are the common input types: ![Basic Widgets](images/basic-widgets.png)
 
 ### Output placeholders
 
@@ -682,10 +664,14 @@ sidebar = sidebar(
     step  = 10
   )
   
-),
+)
 ```
 
 Refresh your app. The sidebar should now show a description, two dropdowns, and a slider.
+
+::: {.column width="45%"}
+![Sidebar with description, dropdowns, and slider](images/layout_bslib.png)
+:::
 
 ::: callout-warning
 ## Nothing reacts yet
@@ -1238,14 +1224,13 @@ observeEvent(input$region, {
 
 ## Stage 1: The Skeleton
 
-**Goal:** Build the layout before touching any data 
-or reactivity. By the end your app runs and looks 
-like a dashboard — with no data in it yet.
+**Goal:** Build the layout before touching any data or reactivity. By the end your app runs and looks like a dashboard — with no data in it yet.
 
 ![Stage 1 — empty dashboard skeleton](images/stage1_skeleton.png)
 
 ::: callout-note
 ## What you learn in this stage
+
 - `page_sidebar()` layout structure
 - `layout_columns()` for side-by-side elements
 - `card()` and `value_box()` as containers
@@ -1254,8 +1239,7 @@ like a dashboard — with no data in it yet.
 
 ### Step 1 — Create app.R
 
-Create a new file called `app.R` in your 
-project root. Copy this exactly:
+Create a new file called `app.R` in your project root. Copy this exactly:
 
 ```{r}
 #| eval: false
@@ -1353,18 +1337,15 @@ Click **Run App**. You should see:
 
 ::: callout-tip
 ## Snapshot
-Take a screenshot of your running app. 
-Save as `images/stage1_running.png`.
+
+Take a screenshot of your running app. Save as `images/stage1_running.png`.
 :::
 
 ### What just happened
 
-You have a running Shiny app with zero data 
-and zero reactivity. The server is completely 
-empty. This confirms the layout works before 
-we add any complexity.
+You have a running Shiny app with zero data and zero reactivity. The server is completely empty. This confirms the layout works before we add any complexity.
 
-```
+```         
 page_sidebar()
 ├── sidebar()           ← left panel
 └── main panel
@@ -1380,26 +1361,19 @@ page_sidebar()
 
 ### Exercise 1 {.unnumbered}
 
-**1a.** Change the `height` of `layout_columns()` 
-wrapping the value boxes from `"150px"` to 
-`"200px"`. What changes?
+**1a.** Change the `height` of `layout_columns()` wrapping the value boxes from `"150px"` to `"200px"`. What changes?
 
-**1b.** Add a fourth `value_box()` with
-`title = "Total estimated cases"`, 
-`value = "—"`, `bs_icon("people")`, 
-`theme = "info"`.
+**1b.** Add a fourth `value_box()` with `title = "Total estimated cases"`, `value = "—"`, `bs_icon("people")`, `theme = "info"`.
 
-**1c.** Add `col_widths = c(7, 5)` to the 
-`layout_columns()` wrapping the map and bar 
-chart. Which card gets wider?
+**1c.** Add `col_widths = c(7, 5)` to the `layout_columns()` wrapping the map and bar chart. Which card gets wider?
 
 ::: {.callout-caution collapse="true"}
 ## Show solution
 
-**1a.** The value box row becomes taller — 
-more breathing room for the KPI values.
+**1a.** The value box row becomes taller — more breathing room for the KPI values.
 
 **1b.**
+
 ```{r}
 #| eval: false
 value_box(
@@ -1411,6 +1385,7 @@ value_box(
 ```
 
 **1c.**
+
 ```{r}
 #| eval: false
 layout_columns(
@@ -1430,17 +1405,15 @@ layout_columns(
 - [ ] Sidebar shows placeholder text
 - [ ] Server is empty — nothing is reactive yet
 
----
+------------------------------------------------------------------------
 
 ## Stage 2: Data, Inputs and KPIs
 
-**Goal:** Load real data, add sidebar inputs, 
-and make the three value boxes reactive. 
-By the end changing the year dropdown updates 
-all three KPI numbers instantly.
+**Goal:** Load real data, add sidebar inputs, and make the three value boxes reactive. By the end changing the year dropdown updates all three KPI numbers instantly.
 
 ::: callout-note
 ## What you learn in this stage
+
 - Loading RDS data into the app
 - `selectInput()` and `sliderInput()` in the sidebar
 - `reactive()` filter data once, share everywhere
@@ -1459,7 +1432,6 @@ malaria_data <- readRDS("data/malaria_data.rds")
 annual_df    <- readRDS("data/annual_summary.rds")
 district_shp <- readRDS("data/bfa_districts.rds")
 ```
-
 
 ### Step 2 — Add inputs to the sidebar
 
@@ -1508,21 +1480,19 @@ sidebar = sidebar(
 ),
 ```
 
-Run the app — inputs appear but nothing 
-reacts yet. That changes in the next step.
+Run the app — inputs appear but nothing reacts yet. That changes in the next step.
 
 ![Stage 2 sidebar with inputs](images/stage2_sidebar.png)
 
 ::: callout-tip
 ## Snapshot
-Take a screenshot of the sidebar showing 
-all inputs. Save as `images/stage2_sidebar.png`.
+
+Take a screenshot of the sidebar showing all inputs. Save as `images/stage2_sidebar.png`.
 :::
 
 ### Step 3 — Connect value boxes to data
 
-Replace the three hardcoded `value = "—"` 
-with `textOutput()` placeholders:
+Replace the three hardcoded `value = "—"` with `textOutput()` placeholders:
 
 ```{r}
 #| eval: false
@@ -1615,23 +1585,22 @@ Click **Run App**. You should now see:
 
 - Three value boxes showing real numbers
 - Changing year updates all three instantly
-- Moving the threshold slider updates 
-  the high burden count
+- Moving the threshold slider updates the high burden count
 - Changing region filters all KPIs
 
 ![Stage 2 complete — reactive KPIs](images/stage2_complete.png)
 
 ::: callout-tip
 ## Snapshot
-Take a screenshot showing the three value 
-boxes with real numbers. Save as 
-`images/stage2_complete.png`.
+
+Take a screenshot showing the three value boxes with real numbers. Save as `images/stage2_complete.png`.
 :::
 
 ::: callout-note
 ## Why reactive() not filter() inside each output?
 
 Without `reactive()`:
+
 ```{r}
 #| eval: false
 # filters 3 times — one per output
@@ -1647,6 +1616,7 @@ output$kpi_itn   <- renderText({
 ```
 
 With `reactive()`:
+
 ```{r}
 #| eval: false
 # filters once — shared by all outputs
@@ -1665,29 +1635,22 @@ output$kpi_itn   <- renderText({
 })
 ```
 
-One filter, three outputs. Faster and 
-easier to maintain.
+One filter, three outputs. Faster and easier to maintain.
 :::
 
 ### Exercise 2 {.unnumbered}
 
-**2a.** Add a fourth value box showing the 
-name of the highest burden district. 
-Use `bs_icon("geo-alt")` and `theme = "info"`.
+**2a.** Add a fourth value box showing the name of the highest burden district. Use `bs_icon("geo-alt")` and `theme = "info"`.
 
-**2b.** Add a `textOutput("sidebar_summary")` 
-below the slider in the sidebar. In the server 
-add a `renderText()` that shows how many 
-districts are currently selected.
+**2b.** Add a `textOutput("sidebar_summary")` below the slider in the sidebar. In the server add a `renderText()` that shows how many districts are currently selected.
 
-**2c.** Move the threshold slider and observe 
-`kpi_count` changing. What happens at 
-threshold = 0? What about 500?
+**2c.** Move the threshold slider and observe `kpi_count` changing. What happens at threshold = 0? What about 500?
 
 ::: {.callout-caution collapse="true"}
 ## Show solution
 
 **2a.** UI:
+
 ```{r}
 #| eval: false
 value_box(
@@ -1699,6 +1662,7 @@ value_box(
 ```
 
 Server:
+
 ```{r}
 #| eval: false
 output$kpi_top <- renderText({
@@ -1713,6 +1677,7 @@ output$kpi_top <- renderText({
 ```
 
 **2b.** UI — add below `sliderInput()`:
+
 ```{r}
 #| eval: false
 hr(),
@@ -1720,6 +1685,7 @@ textOutput("sidebar_summary")
 ```
 
 Server:
+
 ```{r}
 #| eval: false
 output$sidebar_summary <- renderText({
@@ -1730,9 +1696,7 @@ output$sidebar_summary <- renderText({
 })
 ```
 
-**2c.** At threshold = 0 all districts are 
-high burden. At 500 none are — `kpi_count` 
-shows 0.
+**2c.** At threshold = 0 all districts are high burden. At 500 none are — `kpi_count` shows 0.
 :::
 
 ### Pause and check ✅
@@ -1743,23 +1707,20 @@ shows 0.
 - [ ] Changing year updates all KPIs
 - [ ] Moving slider updates high burden count
 - [ ] Changing region filters correctly
-- [ ] District dropdown updates when 
-      region changes
+- [ ] District dropdown updates when region changes
 - [ ] No errors in the console
 
----
+------------------------------------------------------------------------
 
 ## Stage 3: Map and Bar Chart
 
-**Goal:** Replace both card placeholders with 
-real interactive visualisations. By the end 
-you have a choropleth map and a ranked bar 
-chart that update together when inputs change.
+**Goal:** Replace both card placeholders with real interactive visualisations. By the end you have a choropleth map and a ranked bar chart that update together when inputs change.
 
 ![Stage 3 — map and bar chart](images/stage3_visuals.png)
 
 ::: callout-note
 ## What you learn in this stage
+
 - `leafletOutput()` + `renderLeaflet()` for maps
 - Joining data to a shapefile
 - `colorBin()` for map colour palette
@@ -1770,8 +1731,7 @@ chart that update together when inputs change.
 
 ### Step 1 — Add two helper functions
 
-Add these below your data loading, 
-before the UI:
+Add these below your data loading, before the UI:
 
 ```{r}
 #| eval: false
@@ -1806,17 +1766,13 @@ top_districts <- function(df, n = 10) {
 
 ::: callout-note
 ## Why helper functions?
-`make_pal()` is called inside `renderLeaflet()`. 
-`top_districts()` is called inside both 
-`renderPlotly()` and potentially `renderDT()`. 
-Writing them once outside the server keeps 
-the server clean and avoids repetition.
+
+`make_pal()` is called inside `renderLeaflet()`. `top_districts()` is called inside both `renderPlotly()` and potentially `renderDT()`. Writing them once outside the server keeps the server clean and avoids repetition.
 :::
 
 ### Step 2 — Update the UI
 
-Replace both placeholder cards with output 
-containers:
+Replace both placeholder cards with output containers:
 
 ```{r}
 #| eval: false
@@ -1974,22 +1930,18 @@ Click **Run App**. You should now see:
 
 ::: callout-tip
 ## Snapshots
+
 Take screenshots of:
 
-1. Map with a district hovered — 
-   `images/stage3_map_hover.png`
-2. Bar chart with a bar hovered — 
-   `images/stage3_bar_hover.png`
+1.  Map with a district hovered — `images/stage3_map_hover.png`
+2.  Bar chart with a bar hovered — `images/stage3_bar_hover.png`
 :::
 
 ### Exercise 3 {.unnumbered}
 
-**3a.** Change the map background tiles from 
-`CartoDB.Positron` to `Esri.WorldGrayCanvas`. 
-Run `names(providers)` to explore options.
+**3a.** Change the map background tiles from `CartoDB.Positron` to `Esri.WorldGrayCanvas`. Run `names(providers)` to explore options.
 
-**3b.** Add ITN coverage as a second colour 
-option. Add a `radioButtons()` to the sidebar:
+**3b.** Add ITN coverage as a second colour option. Add a `radioButtons()` to the sidebar:
 
 ```{r}
 #| eval: false
@@ -2003,24 +1955,22 @@ radioButtons(
 )
 ```
 
-Then update `renderLeaflet()` to use 
-`input$map_indicator` to select which 
-column to colour by.
+Then update `renderLeaflet()` to use `input$map_indicator` to select which column to colour by.
 
-**3c.** Add `col_widths = c(6, 6)` to the 
-`layout_columns()` — confirm both cards 
-are equal width.
+**3c.** Add `col_widths = c(6, 6)` to the `layout_columns()` — confirm both cards are equal width.
 
 ::: {.callout-caution collapse="true"}
 ## Show solution
 
 **3a.**
+
 ```{r}
 #| eval: false
 addProviderTiles(providers$Esri.WorldGrayCanvas)
 ```
 
 **3b.** Update `renderLeaflet()`:
+
 ```{r}
 #| eval: false
 # use selected indicator
@@ -2035,6 +1985,7 @@ addPolygons(
 ```
 
 **3c.**
+
 ```{r}
 #| eval: false
 layout_columns(
@@ -2056,18 +2007,17 @@ layout_columns(
 - [ ] Both update when region changes
 - [ ] No errors in the console
 
----
+------------------------------------------------------------------------
 
 ## Stage 4: Trend Chart and Polish
 
-**Goal:** Complete the dashboard with the 
-rainfall-incidence trend chart and make it 
-look professional with theming and polish.
+**Goal:** Complete the dashboard with the rainfall-incidence trend chart and make it look professional with theming and polish.
 
 ![Stage 4 — complete polished dashboard](images/stage4_complete.png)
 
 ::: callout-note
 ## What you learn in this stage
+
 - Dual-axis `plotly` chart
 - `bs_theme()` for professional theming
 - `tags$img()` for logo
@@ -2190,10 +2140,8 @@ output$trend_chart <- renderPlotly({
 
 ::: callout-tip
 ## Snapshot
-Take a screenshot showing the seasonal 
-pattern clearly — rainfall bars and 
-incidence lines peaking at different months. 
-Save as `images/stage4_trend.png`.
+
+Take a screenshot showing the seasonal pattern clearly — rainfall bars and incidence lines peaking at different months. Save as `images/stage4_trend.png`.
 :::
 
 ### Step 3 — Add a theme
@@ -2274,8 +2222,7 @@ output$download_data <- downloadHandler(
 
 ### Step 6 — Run your complete dashboard
 
-Click **Run App**. You now have a complete 
-professional malaria burden dashboard:
+Click **Run App**. You now have a complete professional malaria burden dashboard:
 
 - Header with title
 - Sidebar with logo, dark mode, inputs, download
@@ -2289,20 +2236,17 @@ professional malaria burden dashboard:
 
 ::: callout-tip
 ## Final snapshot
-Take a full screenshot of the complete 
-dashboard. Save as `images/stage4_final.png`.
+
+Take a full screenshot of the complete dashboard. Save as `images/stage4_final.png`.
 
 This is your evidence of what you built today!
 :::
 
 ### Exercise 4 {.unnumbered}
 
-**4a.** Try three different Bootswatch themes — 
-`"cosmo"`, `"minty"`, `"sandstone"`. 
-Which looks best with the malaria colour palette?
+**4a.** Try three different Bootswatch themes — `"cosmo"`, `"minty"`, `"sandstone"`. Which looks best with the malaria colour palette?
 
-**4b.** Add a `selectInput()` to control 
-how many districts appear in the bar chart:
+**4b.** Add a `selectInput()` to control how many districts appear in the bar chart:
 
 ```{r}
 #| eval: false
@@ -2316,16 +2260,13 @@ selectInput(
 
 Connect it to `top_districts(n = as.integer(input$n_districts))`.
 
-**4c.** Add a `DT::dataTableOutput("data_table")` 
-in a new card below the trend chart. 
-In the server add `renderDT()` showing 
-district, region, incidence and ITN coverage 
-for the filtered data sorted by incidence.
+**4c.** Add a `DT::dataTableOutput("data_table")` in a new card below the trend chart. In the server add `renderDT()` showing district, region, incidence and ITN coverage for the filtered data sorted by incidence.
 
 ::: {.callout-caution collapse="true"}
 ## Show solution
 
 **4a.** Update `bs_theme()`:
+
 ```{r}
 #| eval: false
 theme = bs_theme(
@@ -2335,6 +2276,7 @@ theme = bs_theme(
 ```
 
 **4b.** Update `renderPlotly()`:
+
 ```{r}
 #| eval: false
 df <- top_districts(
@@ -2344,6 +2286,7 @@ df <- top_districts(
 ```
 
 **4c.** UI — add new card after trend:
+
 ```{r}
 #| eval: false
 card(
@@ -2356,6 +2299,7 @@ card(
 ```
 
 Server:
+
 ```{r}
 #| eval: false
 output$data_table <- renderDT({
@@ -2379,8 +2323,7 @@ output$data_table <- renderDT({
 
 ### Pause and check ✅
 
-- [ ] Trend chart shows rainfall bars 
-      and incidence lines
+- [ ] Trend chart shows rainfall bars and incidence lines
 - [ ] Rainfall peaks July–August
 - [ ] Incidence peaks September–October
 - [ ] Changing district updates trend chart
@@ -2390,13 +2333,11 @@ output$data_table <- renderDT({
 - [ ] All four stages work together
 - [ ] No errors in the console
 
----
+------------------------------------------------------------------------
 
 ## Deployment
 
-Your dashboard is ready to share publicly 
-via **shinyapps.io** — free hosting for 
-Shiny apps.
+Your dashboard is ready to share publicly via **shinyapps.io** — free hosting for Shiny apps.
 
 ### Step 1 — Create a free account
 
@@ -2411,8 +2352,7 @@ install.packages("rsconnect")
 
 ### Step 3 — Connect your account
 
-In RStudio:
-`Tools → Global Options → Publishing → Connect`
+In RStudio: `Tools → Global Options → Publishing → Connect`
 
 Or run in console:
 
@@ -2425,9 +2365,7 @@ rsconnect::setAccountInfo(
 )
 ```
 
-Your token and secret are on your 
-shinyapps.io dashboard under 
-`Account → Tokens`.
+Your token and secret are on your shinyapps.io dashboard under `Account → Tokens`.
 
 ### Step 4 — Deploy
 
@@ -2441,31 +2379,30 @@ rsconnect::deployApp(
 
 Your app is now live at:
 
-```
+```         
 https://your-username.shinyapps.io/
          malaria-burden-explorer-bfa/
 ```
 
 ::: callout-warning
 ## Free tier limits
+
 - 5 apps maximum
 - 25 active hours per month
 - Apps sleep after 15 min inactivity
 
-Sufficient for training. For production 
-use consider Posit Connect.
+Sufficient for training. For production use consider Posit Connect.
 :::
 
----
+------------------------------------------------------------------------
 
 ## Next Steps and Resources
 
-You have built a complete interactive malaria 
-burden dashboard from scratch in two hours.
+You have built a complete interactive malaria burden dashboard from scratch in two hours.
 
 ### What you built
 
-```
+```         
 ✓ bslib layout — page_sidebar, card, value_box
 ✓ Inputs — selectInput, sliderInput
 ✓ Reactivity — reactive(), observeEvent()
@@ -2478,10 +2415,9 @@ burden dashboard from scratch in two hours.
 
 ### Where to go next
 
-**Scale your code** — as your app grows, 
-split `app.R` into separate files:
+**Scale your code** — as your app grows, split `app.R` into separate files:
 
-```
+```         
 global.R   ← packages, data, helpers
 ui.R       ← ui object
 server.R   ← server function
@@ -2490,19 +2426,15 @@ app.R      ← shinyApp(ui, server) only
 
 **Key resources:**
 
-| Resource | Link |
-|---|---|
-| Mastering Shiny | mastering-shiny.org |
-| bslib docs | rstudio.github.io/bslib |
-| Shiny gallery | shiny.posit.co/r/gallery |
-| AMMnet community | ammnet.org |
+| Resource         | Link                     |
+|------------------|--------------------------|
+| Mastering Shiny  | mastering-shiny.org      |
+| bslib docs       | rstudio.github.io/bslib  |
+| Shiny gallery    | shiny.posit.co/r/gallery |
+| AMMnet community | ammnet.org               |
 
 ::: callout-tip
 ## Keep building
-Adapt this dashboard to your own country 
-or programme data. The patterns you learned 
-today — reactive(), renderLeaflet(), 
-renderPlotly() — are the same ones used 
-in production dashboards at national 
-malaria programmes across Africa.
+
+Adapt this dashboard to your own country or programme data. The patterns you learned today — reactive(), renderLeaflet(), renderPlotly() — are the same ones used in production dashboards at national malaria programmes across Africa.
 :::
